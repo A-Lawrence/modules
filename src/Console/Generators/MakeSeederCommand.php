@@ -2,31 +2,30 @@
 
 namespace Caffeinated\Modules\Console\Generators;
 
-class MakeControllerCommand extends MakeCommand
+class MakeSeederCommand extends MakeCommand
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'make:module:controller
-    	{slug : The slug of the module}
-    	{name : The name of the controller class}
-    	{--resource : Generate a module resource controller class}';
+    protected $signature = 'make:module:seeder
+    	{slug : The slug of the module.}
+    	{name : The name of the seeder class.}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Create a new module controller class';
+    protected $description = 'Create a new module seeder class';
 
     /**
      * String to store the command type.
      *
      * @var string
      */
-    protected $type = 'Controller';
+    protected $type = 'Seeder';
 
     /**
      * Module folders to be created.
@@ -34,7 +33,7 @@ class MakeControllerCommand extends MakeCommand
      * @var array
      */
     protected $listFolders = [
-        'Http/Controllers/',
+        'Database/Seeds/',
     ];
 
     /**
@@ -47,26 +46,13 @@ class MakeControllerCommand extends MakeCommand
     ];
 
     /**
-     * Module signature option.
-     *
-     * @var array
-     */
-    protected $signOption = [
-        'resource',
-    ];
-
-    /**
      * Module stubs used to populate defined files.
      *
      * @var array
      */
     protected $listStubs = [
         'default' => [
-            'controller.stub',
-        ],
-
-        'resource' => [
-            'controller_resource.stub',
+            'seeder_plus.stub',
         ],
     ];
 

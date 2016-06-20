@@ -17,6 +17,19 @@ return [
 
 	/*
 	|--------------------------------------------------------------------------
+	| Modules Default State
+	|--------------------------------------------------------------------------
+	|
+	| When a previously unknown module is added, if it doesn't have an 'enabled'
+	| state set then this is the value which it will default to. If this is
+	| not provided then the module will default to being 'enabled'.
+	|
+	*/
+
+    'enabled' => true,
+
+	/*
+	|--------------------------------------------------------------------------
 	| Modules Base Namespace
 	|--------------------------------------------------------------------------
 	|

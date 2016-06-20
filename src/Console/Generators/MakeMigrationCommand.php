@@ -1,20 +1,19 @@
 <?php
+
 namespace Caffeinated\Modules\Console\Generators;
 
-use Caffeinated\Modules\Modules;
-use Illuminate\Console\Command;
-use Illuminate\Filesystem\Filesystem;
-use Illuminate\Support\Str;
-use Symfony\Component\Console\Input\InputArgument;
-
-class MakeMigrationCommand extends Command
+class MakeMigrationCommand extends MakeCommand
 {
     /**
-     * The console command name.
+     * The name and signature of the console command.
      *
      * @var string
      */
-    protected $name = 'make:module:migration';
+    protected $signature = 'make:module:migration
+    	{slug : The slug of the module.}
+    	{name : The name of the migration.}
+    	{--create= : The table to be created.}
+        {--table= : The table to migrate.}';
 
     /**
      * The console command description.
@@ -24,127 +23,116 @@ class MakeMigrationCommand extends Command
     protected $description = 'Create a new module migration file';
 
     /**
-     * Array to store the configuration details.
+     * String to store the command type.
+     *
+     * @var string
+     */
+    protected $type = 'Migration';
+
+    /**
+     * Module folders to be created.
      *
      * @var array
      */
-    protected $container;
+    protected $listFolders = [
+        'Database/Migrations/',
+    ];
 
     /**
-     * Create a new command instance.
+     * Module files to be created.
      *
-     * @param Filesystem  $files
-     * @param Modules  $module
+     * @var array
      */
-    public function __construct(Filesystem $files, Modules $module)
-    {
-        parent::__construct();
-
-        $this->files  = $files;
-        $this->module = $module;
-    }
+    protected $listFiles = [
+        '{{filename}}.php',
+    ];
 
     /**
-     * Execute the console command.
+     * Module signature option.
      *
-     * @return mixed
+     * @var array
      */
-    public function fire()
-    {
-        $this->container['slug']          = strtolower($this->argument('slug'));
-        $this->container['table']         = strtolower($this->argument('table'));
-        $this->container['migrationName'] = snake_case($this->container['table']);
-        $this->container['className']     = studly_case($this->container['migrationName']);
-
-        if ($this->module->exists($this->container['slug'])) {
-            $this->makeFile();
-
-            $file = pathinfo($this->getDestinationFile(), PATHINFO_FILENAME);
-
-            exec('composer dump-autoload 2>/dev/null');
-
-            return $this->line("<info>Created Module Migration:</info> $file");
-        }
-
-        return $this->error('Module does not exist.');
-    }
+    protected $signOption = [
+        'create',
+        'table',
+    ];
 
     /**
-     * Create a new migration file.
+     * Module stubs used to populate defined files.
      *
-     * @return int
+     * @var array
      */
-    protected function makeFile()
-    {
-        return $this->files->put($this->getDestinationFile(), $this->getStubContent());
-    }
+    protected $listStubs = [
+        'default' => [
+            'migration.stub',
+        ],
+
+        'create' => [
+            'migration_create.stub',
+        ],
+
+        'table' => [
+            'migration_table.stub',
+        ],
+    ];
 
     /**
-     * Get file destination.
+     * Resolve Container after getting file path.
      *
-     * @return string
-     */
-    protected function getDestinationFile()
-    {
-        return $this->getPath().$this->formatContent($this->getFilename());
-    }
-
-    /**
-     * Get module migration path.
-     *
-     * @return string
-     */
-    protected function getPath()
-    {
-        $path = $this->module->getModulePath($this->container['slug']);
-
-        return $path.'Database/Migrations/';
-    }
-
-    /**
-     * Get the migration filename.
-     *
-     * @return string
-     */
-    protected function getFilename()
-    {
-        return date('Y_m_d_His').'_'.$this->container['migrationName'].'.php';
-    }
-
-    /**
-     * Get the stub content.
-     *
-     * @return string
-     */
-    protected function getStubContent()
-    {
-        return $this->formatContent($this->files->get(__DIR__.'/../../../resources/stubs/migration.stub'));
-    }
-
-    /**
-	 * Replace placeholder text with correct values.
-	 *
-	 * @return string
-	 */
-	protected function formatContent($content)
-    {
-        return str_replace(
-			['{{className}}', '{{table}}'],
-			[$this->container['className'], $this->container['table']],
-			$content
-		);
-    }
-
-    /**
-     * Get the console command arguments.
+     * @param string $FilePath
      *
      * @return array
      */
-    protected function getArguments()
+    protected function resolveByPath($filePath)
     {
-        return [
-            ['slug', InputArgument::REQUIRED, 'The slug of the module'],
-            ['table', InputArgument::REQUIRED, 'The name of the database table']
-        ];
+        $this->container['filename'] = $this->makeFileName($filePath);
+        $this->container['classname'] = basename($filePath);
+        $this->container['tablename'] = 'dummy';
+    }
+
+    /**
+     * Resolve Container after getting input option.
+     *
+     * @param string $option
+     *
+     * @return array
+     */
+    protected function resolveByOption($option)
+    {
+        $this->container['tablename'] = $option;
+    }
+
+    /**
+     * Make FileName.
+     *
+     * @param string $filePath
+     *
+     * @return string
+     */
+    protected function makeFileName($filePath)
+    {
+        return date('Y_m_d_His').'_'.strtolower(snake_case(basename($filePath)));
+    }
+
+    /**
+     * Replace placeholder text with correct values.
+     *
+     * @return string
+     */
+    protected function formatContent($content)
+    {
+        return str_replace(
+            [
+                '{{filename}}',
+                '{{classname}}',
+                '{{tablename}}',
+            ],
+            [
+                $this->container['filename'],
+                $this->container['classname'],
+                $this->container['tablename'],
+            ],
+            $content
+        );
     }
 }

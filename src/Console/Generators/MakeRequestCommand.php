@@ -1,146 +1,97 @@
 <?php
+
 namespace Caffeinated\Modules\Console\Generators;
 
-use Caffeinated\Modules\Modules;
-use Illuminate\Console\Command;
-use Illuminate\Filesystem\Filesystem;
-use Illuminate\Support\Str;
-use Symfony\Component\Console\Input\InputArgument;
-
-class MakeRequestCommand extends Command
+class MakeRequestCommand extends MakeCommand
 {
     /**
-     * The console command name.
+     * The name and signature of the console command.
      *
      * @var string
      */
-    protected $name = 'make:module:request';
+    protected $signature = 'make:module:request
+    	{slug : The slug of the module.}
+    	{name : The name of the request class.}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Create a new module form request class';
+    protected $description = 'Create a new module request class';
 
     /**
-     * Array to store the configuration details.
+     * String to store the command type.
+     *
+     * @var string
+     */
+    protected $type = 'Request';
+
+    /**
+     * Module folders to be created.
      *
      * @var array
      */
-    protected $container;
+    protected $listFolders = [
+        'Http/Requests/',
+    ];
 
     /**
-     * Create a new command instance.
+     * Module files to be created.
      *
-     * @param Filesystem  $files
-     * @param Modules  $module
+     * @var array
      */
-    public function __construct(Filesystem $files, Modules $module)
-    {
-        parent::__construct();
-
-        $this->files  = $files;
-        $this->module = $module;
-    }
+    protected $listFiles = [
+        '{{filename}}.php',
+    ];
 
     /**
-     * Execute the console command.
+     * Module stubs used to populate defined files.
      *
-     * @return mixed
+     * @var array
      */
-    public function fire()
-    {
-        $this->container['slug']      = strtolower($this->argument('slug'));
-        $this->container['className'] = $this->argument('name');
-
-        if ($this->module->exists($this->container['slug'])) {
-            $this->container['module'] = $this->module->where('slug', $this->container['slug'])->first();
-
-            $this->makeFile();
-
-            return $this->info('Module request created successfully.');
-        }
-
-        return $this->error('Module does not exist.');
-    }
+    protected $listStubs = [
+        'default' => [
+            'request.stub',
+        ],
+    ];
 
     /**
-     * Create a new migration file.
+     * Resolve Container after getting file path.
      *
-     * @return int
-     */
-    protected function makeFile()
-    {
-        return $this->files->put($this->getDestinationFile(), $this->getStubContent());
-    }
-
-    /**
-     * Get file destination.
-     *
-     * @return string
-     */
-    protected function getDestinationFile()
-    {
-        return $this->getPath().$this->formatContent($this->getFilename());
-    }
-
-    /**
-     * Get module migration path.
-     *
-     * @return string
-     */
-    protected function getPath()
-    {
-        $path = $this->module->getModulePath($this->container['slug']);
-
-        return $path.'Http/Requests/';
-    }
-
-    /**
-     * Get the migration filename.
-     *
-     * @return string
-     */
-    protected function getFilename()
-    {
-        return $this->container['className'].'.php';
-    }
-
-    /**
-     * Get the stub content.
-     *
-     * @return string
-     */
-    protected function getStubContent()
-    {
-        return $this->formatContent($this->files->get(__DIR__.'/../../../resources/stubs/request.stub'));
-    }
-
-    /**
-	 * Replace placeholder text with correct values.
-	 *
-	 * @return string
-	 */
-	protected function formatContent($content)
-    {
-        return str_replace(
-			['{{className}}', '{{namespace}}', '{{path}}'],
-			[$this->container['className'], $this->container['module']['namespace'], $this->module->getNamespace()],
-			$content
-		);
-    }
-
-    /**
-     * Get the console command arguments.
+     * @param string $FilePath
      *
      * @return array
      */
-    protected function getArguments()
+    protected function resolveByPath($filePath)
     {
-        return [
-            ['slug', InputArgument::REQUIRED, 'The slug of the module'],
-            ['name', InputArgument::REQUIRED, 'The name of the controller']
-        ];
+        $this->container['filename'] = $this->makeFileName($filePath);
+        $this->container['namespace'] = $this->getNamespace($filePath);
+        $this->container['path'] = $this->getBaseNamespace();
+        $this->container['classname'] = basename($filePath);
+    }
+
+    /**
+     * Replace placeholder text with correct values.
+     *
+     * @return string
+     */
+    protected function formatContent($content)
+    {
+        return str_replace(
+            [
+                '{{filename}}',
+                '{{path}}',
+                '{{namespace}}',
+                '{{classname}}',
+            ],
+            [
+                $this->container['filename'],
+                $this->container['path'],
+                $this->container['namespace'],
+                $this->container['classname'],
+            ],
+            $content
+        );
     }
 }
